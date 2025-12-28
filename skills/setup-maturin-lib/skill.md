@@ -332,6 +332,28 @@ git add .
 git commit -m "Initial commit: scaffold Rust/Python library with maturin"
 ```
 
+### Step 12: Verify Build
+
+Build the extension and verify it works by calling the hello function from Python:
+
+```bash
+just dev
+```
+
+Then test the import:
+
+```bash
+PACKAGE_NAME=$(basename "$(pwd)" | tr '-' '_')
+uv run python -c "from $PACKAGE_NAME import hello; print(hello())"
+```
+
+Expected output: `Hello from Rust!`
+
+If the build or import fails, debug the issue before completing. Common problems:
+- Module name mismatch between Cargo.toml `lib.name` and pyproject.toml `module-name`
+- Missing PyO3 features in Cargo.toml
+- Python import path issues in `__init__.py`
+
 ## Checklist
 
 - [ ] Confirm Python version (default 3.12)
@@ -353,6 +375,7 @@ git commit -m "Initial commit: scaffold Rust/Python library with maturin"
 - [ ] Fetch available GitHub orgs with `gh org list`
 - [ ] Ask about git remote setup
 - [ ] Initialise git and optionally create remote
+- [ ] Build extension with `just dev` and verify hello function works from Python
 
 ## Notes
 
