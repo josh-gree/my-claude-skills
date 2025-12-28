@@ -140,6 +140,8 @@ fn _<package_name>(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
 ### Step 7: Add dev dependencies
 
+**Note:** Do NOT run `uv init` - maturin already created `pyproject.toml`. Just use `uv add` directly:
+
 ```bash
 uv add --dev maturin ipython jupyterlab ruff pytest pytest-cov
 ```
