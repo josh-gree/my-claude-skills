@@ -20,21 +20,35 @@ Ask the user for:
 2. **Minimum Python version for abi3** - default to 3.9 (determines wheel compatibility)
 3. **Project description** (optional) - for pyproject.toml and README
 
-Verify prerequisites are installed:
+Verify prerequisites are installed (auto-install maturin if missing):
 
 ```bash
-command -v maturin >/dev/null || echo "maturin not found - install with: pipx install maturin"
+command -v maturin >/dev/null || pipx install maturin
 command -v uv >/dev/null || echo "uv not found"
 command -v cargo >/dev/null || echo "cargo not found"
 ```
 
-### Step 2: Initialise with maturin
+### Step 2: Validate Project Name
 
-Get the project name from the current directory, then run maturin to scaffold:
+Get the project name from the current directory and check it's not a reserved Rust keyword:
 
 ```bash
 PROJECT_NAME=$(basename "$(pwd)")
-maturin new . --bindings pyo3 --name "$PROJECT_NAME"
+```
+
+**Reserved names that cannot be used:** `test`, `main`, `std`, `core`, `self`, `super`, `crate`, `Self`, `proc_macro`
+
+If the directory name is reserved, use AskUserQuestion to prompt for an alternative project name. The alternative name will be used for the package while keeping the directory name unchanged.
+
+### Step 3: Initialise with maturin
+
+Use a temp directory to scaffold (maturin refuses to create in existing directories):
+
+```bash
+TEMP_DIR=$(mktemp -d)
+maturin new "$TEMP_DIR/$PROJECT_NAME" --bindings pyo3 --name "$PROJECT_NAME"
+cp -r "$TEMP_DIR/$PROJECT_NAME"/. .
+rm -rf "$TEMP_DIR"
 ```
 
 This creates:
@@ -42,7 +56,7 @@ This creates:
 - `pyproject.toml` - Python project configuration with maturin build backend
 - `src/lib.rs` - Initial Rust code with PyO3 bindings
 
-### Step 3: Configure pyproject.toml for mixed layout
+### Step 4: Configure pyproject.toml for mixed layout
 
 Update `pyproject.toml` to support a mixed Python/Rust layout:
 
@@ -65,7 +79,7 @@ features = ["pyo3/extension-module"]
 
 The `module-name` setting puts the Rust extension at `<package>._<package>` so it doesn't conflict with the Python package.
 
-### Step 4: Configure Cargo.toml
+### Step 5: Configure Cargo.toml
 
 Update `Cargo.toml` with proper abi3 configuration:
 
@@ -85,7 +99,7 @@ pyo3 = { version = "0.23", features = ["abi3-py3<min-version>", "extension-modul
 
 The underscore prefix on the lib name matches the module-name in pyproject.toml.
 
-### Step 5: Create mixed Python/Rust layout
+### Step 6: Create mixed Python/Rust layout
 
 Create the Python package that wraps the Rust extension:
 
@@ -124,7 +138,9 @@ fn _<package_name>(m: &Bound<'_, PyModule>) -> PyResult<()> {
 }
 ```
 
-### Step 6: Add dev dependencies
+### Step 7: Add dev dependencies
+
+**Note:** Do NOT run `uv init` - maturin already created `pyproject.toml`. Just use `uv add` directly:
 
 ```bash
 uv add --dev maturin ipython jupyterlab ruff pytest pytest-cov
@@ -132,7 +148,7 @@ uv add --dev maturin ipython jupyterlab ruff pytest pytest-cov
 
 Adding maturin as a dev dependency allows `uv run maturin develop`.
 
-### Step 7: Create project structure
+### Step 8: Create project structure
 
 Create directories:
 
@@ -168,7 +184,7 @@ def test_placeholder():
     assert True
 ```
 
-### Step 8: Create README.md
+### Step 9: Create README.md
 
 Create a minimal README using the directory name as the project name:
 
@@ -188,7 +204,7 @@ just check  # Format and lint
 ```
 ```
 
-### Step 9: Create CLAUDE.md
+### Step 10: Create CLAUDE.md
 
 Create a `CLAUDE.md` with project context:
 
@@ -229,7 +245,7 @@ Key commands:
 The Rust extension is built as `<package>._<package>` and re-exported from `<package>/__init__.py`.
 ```
 
-### Step 10: Create justfile
+### Step 11: Create justfile
 
 Create a `justfile` with development commands:
 
@@ -296,7 +312,7 @@ build:
     uv run maturin build --release
 ```
 
-### Step 11: Git Repository Setup
+### Step 12: Git Repository Setup
 
 **First, discover available GitHub organisations:**
 
@@ -332,7 +348,7 @@ git add .
 git commit -m "Initial commit: scaffold Rust/Python library with maturin"
 ```
 
-### Step 12: Verify Build
+### Step 13: Verify Build
 
 Build the extension and verify it works by calling the hello function from Python:
 
@@ -359,8 +375,9 @@ If the build or import fails, debug the issue before completing. Common problems
 - [ ] Confirm Python version (default 3.12)
 - [ ] Confirm minimum Python version for abi3 (default 3.9)
 - [ ] Get optional project description
-- [ ] Verify maturin, uv, and cargo are installed
-- [ ] Run `maturin new . --bindings pyo3`
+- [ ] Verify maturin, uv, and cargo are installed (auto-install maturin via pipx if missing)
+- [ ] Validate project name is not a reserved Rust keyword
+- [ ] Run `maturin new` via temp directory workaround
 - [ ] Configure pyproject.toml for mixed layout
 - [ ] Configure Cargo.toml with abi3 features
 - [ ] Create Python package in `python/<package>/`
