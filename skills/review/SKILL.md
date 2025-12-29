@@ -138,9 +138,13 @@ Recognition is valuable—review isn't only about finding problems.
 
 ## Review Approach
 
-Follow this three-step process to review code efficiently:
+Follow this multi-phase process to produce thorough reviews:
 
-### Step 1: Assess the Big Picture
+### Phase 1: Initial Review
+
+Conduct a complete review of the code:
+
+#### Step 1: Assess the Big Picture
 
 Before diving into details, ask: **Does this change make sense at all?**
 
@@ -150,7 +154,7 @@ Before diving into details, ask: **Does this change make sense at all?**
 
 If there are major design problems, raise them immediately. Don't let the developer build more work on a problematic foundation.
 
-### Step 2: Examine Core Components
+#### Step 2: Examine Core Components
 
 Identify the files containing the bulk of logical changes and review these first:
 
@@ -158,13 +162,85 @@ Identify the files containing the bulk of logical changes and review these first
 - Major issues here often make other review comments irrelevant
 - Consider reviewing tests before implementation to understand intended behaviour
 
-### Step 3: Review Remaining Files Systematically
+#### Step 3: Review Remaining Files Systematically
 
 Once you've confirmed no fundamental issues exist:
 
 - Work through remaining files in a logical order
 - Look for issues in each review category
 - Ensure nothing is missed
+
+### Phase 2: Critique
+
+After completing the initial review, **launch a subagent using the Task tool** to critique the review. Using a separate agent provides a genuinely fresh perspective.
+
+**You MUST use the Task tool** with `subagent_type: "general-purpose"` to run the critique. Do not attempt to critique your own review directly.
+
+Provide the subagent with:
+1. The original code being reviewed (file paths or content)
+2. Your complete initial review output
+3. Instructions to critique the review
+
+The critique subagent examines the initial review and looks for:
+
+- **Missed issues** - Problems in the code that the initial review didn't catch
+- **Incorrect severity** - Findings that should be upgraded or downgraded
+- **False positives** - Findings that aren't actually problems on closer inspection
+- **Incomplete reasoning** - Suggestions that lack proper justification
+
+Example Task tool invocation (showing the actual tool parameters):
+
+```
+Tool: Task
+Parameters:
+  subagent_type: "general-purpose"
+  description: "Critique code review"
+  prompt: |
+    Critique this code review. You have access to Bash and Read tools.
+
+    To see exactly what changed, run:
+    git diff main...HEAD
+
+    Files under review (use Read to examine full context if needed):
+    - src/components/Button.tsx
+    - src/utils/validation.ts
+
+    Initial review output:
+    ## Summary
+    [paste your complete review output here]
+
+    ## Findings
+    [include all findings from your initial review]
+
+    Your job is to find what the review missed or got wrong:
+    1. Run git diff to see the actual changes
+    2. Read full files if you need more context
+    3. Compare the changes against the review findings
+    4. Identify: missed issues, incorrect severity, false positives, incomplete reasoning
+    5. Return your critique as a structured list of findings
+```
+
+The subagent has access to Bash (for `git diff`) and Read tools. Using `git diff main...HEAD` shows exactly what changed, which is more focused than reading entire files. Use Read for additional context when needed.
+
+### Phase 3: Synthesis
+
+Combine the initial review with critique findings into a final output:
+
+1. **Merge findings** - Add any new issues identified during critique
+2. **Remove false positives** - If critique determines a finding isn't actually a problem, remove it entirely
+3. **Resolve severity conflicts** - When both agree an issue exists but disagree on severity:
+   - Prefer higher severity (err on the side of caution)
+   - Note disagreements with context when relevant
+4. **Annotate critique contributions** - Mark findings that came from the critique phase with `[Critique]`
+
+#### Deciding on Additional Passes
+
+After synthesis, decide whether another critique pass would add value:
+
+- **Run another pass if:** The critique identified any new issues (missed problems, severity upgrades, or false positives)
+- **Stop if:** The critique only confirmed existing findings without adding new ones
+
+Limit to a maximum of 2 critique passes. Beyond this, additional passes rarely surface new issues and the cost outweighs the benefit.
 
 ## Output Format
 
@@ -179,6 +255,8 @@ Structure review findings clearly:
 
 ### Design
 - [Severity] file:line - Description
+- [Critique] [Severity] file:line - Description (new issue found by critique)
+- [Upgraded from Suggestion] [Blocking] file:line - Description (severity changed by critique)
 
 ### Functionality
 - [Severity] file:line - Description
@@ -211,6 +289,12 @@ Structure review findings clearly:
 
 [Brief explanation of verdict]
 ```
+
+### Annotation Format
+
+- **Initial findings**: Listed without prefix, e.g., `[Blocking] file:line - Description`
+- **Critique findings**: Prefixed with `[Critique]`, e.g., `[Critique] [Suggestion] file:line - Description`
+- **Severity adjustments**: Note when critique changed severity, e.g., `[Upgraded from Suggestion] [Blocking] file:line - Description`
 
 Omit empty categories. Group related findings together.
 
