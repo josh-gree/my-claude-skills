@@ -3,7 +3,7 @@ user-invocable: true
 description: Review code using Google's code review principles. Use for ad-hoc file review or as the foundation for PR and codebase reviews.
 arguments:
   - name: files
-    description: Files or directories to review (optional - defaults to staged changes or current directory)
+    description: Files or directories to review (optional)
 ---
 
 # Code Review
