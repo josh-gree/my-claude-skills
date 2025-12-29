@@ -1,6 +1,6 @@
 ---
 name: review-pr
-description: Review a pull request using Google's code review principles. Takes a PR number or auto-detects from current branch. Use when the user wants to review a PR, check PR changes, or says "review PR X".
+description: Review a pull request using Google's code review principles. Takes a PR number or auto-detects from current branch. Use when the user wants to review a PR, check PR changes, or says "/review-pr 123".
 user-invocable: true
 arguments:
   - name: pr-number
@@ -83,15 +83,18 @@ gh pr diff <number> --name-only
 
 ### Step 6: Review the Changes
 
-Use the `/review` skill to review the changed files:
+Use the `/review` skill to review the changed files, providing PR context:
 
 ```
 /review <space-separated list of changed files>
+
+Context: This is a PR review for "<PR title>". Focus on the changes in the diff only, not entire file contents.
+
+PR Description:
+<PR description from Step 3>
 ```
 
-This invokes the base review skill which applies Google's code review principles.
-
-**Important context to provide:** Before invoking `/review`, note that this is a PR review so the focus should be on the changes only, not the entire file contents. The PR description provides intent.
+This invokes the base review skill which applies Google's code review principles. The context ensures the review focuses on the PR changes rather than reviewing files in isolation.
 
 ### Step 7: Post the Review
 
