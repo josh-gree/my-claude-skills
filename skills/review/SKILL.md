@@ -172,21 +172,40 @@ Once you've confirmed no fundamental issues exist:
 
 ### Phase 2: Critique
 
-After completing the initial review, launch a **critique pass** to improve review quality.
+After completing the initial review, **launch a subagent using the Task tool** to critique the review. Using a separate agent provides a genuinely fresh perspective.
 
-The critique examines your own review output and looks for:
+**You MUST use the Task tool** with `subagent_type: "general-purpose"` to run the critique. Do not attempt to critique your own review directly.
+
+Provide the subagent with:
+1. The original code being reviewed (file paths or content)
+2. Your complete initial review output
+3. Instructions to critique the review
+
+The critique subagent examines the initial review and looks for:
 
 - **Missed issues** - Problems in the code that the initial review didn't catch
 - **Incorrect severity** - Findings that should be upgraded or downgraded
 - **False positives** - Findings that aren't actually problems on closer inspection
 - **Incomplete reasoning** - Suggestions that lack proper justification
 
-To perform the critique:
+Example Task tool invocation:
 
-1. Re-read the original code with fresh eyes
-2. Compare against your initial findings
-3. Ask: "What did I miss? What did I get wrong?"
-4. Document any additional findings or corrections
+```
+Task tool with subagent_type: "general-purpose"
+prompt: |
+  Critique this code review. You have access to the original code and the review output.
+
+  Files to review: <list of files>
+
+  Initial review output:
+  <paste your review here>
+
+  Your job is to find what the review missed or got wrong:
+  1. Read the original code files
+  2. Compare against the review findings
+  3. Identify: missed issues, incorrect severity, false positives, incomplete reasoning
+  4. Return your critique as a structured list of findings
+```
 
 ### Phase 3: Synthesis
 
