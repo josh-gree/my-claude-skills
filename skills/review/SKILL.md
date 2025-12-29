@@ -138,9 +138,13 @@ Recognition is valuable—review isn't only about finding problems.
 
 ## Review Approach
 
-Follow this three-step process to review code efficiently:
+Follow this multi-phase process to produce thorough reviews:
 
-### Step 1: Assess the Big Picture
+### Phase 1: Initial Review
+
+Conduct a complete review of the code:
+
+#### Step 1: Assess the Big Picture
 
 Before diving into details, ask: **Does this change make sense at all?**
 
@@ -150,7 +154,7 @@ Before diving into details, ask: **Does this change make sense at all?**
 
 If there are major design problems, raise them immediately. Don't let the developer build more work on a problematic foundation.
 
-### Step 2: Examine Core Components
+#### Step 2: Examine Core Components
 
 Identify the files containing the bulk of logical changes and review these first:
 
@@ -158,13 +162,51 @@ Identify the files containing the bulk of logical changes and review these first
 - Major issues here often make other review comments irrelevant
 - Consider reviewing tests before implementation to understand intended behaviour
 
-### Step 3: Review Remaining Files Systematically
+#### Step 3: Review Remaining Files Systematically
 
 Once you've confirmed no fundamental issues exist:
 
 - Work through remaining files in a logical order
 - Look for issues in each review category
 - Ensure nothing is missed
+
+### Phase 2: Critique
+
+After completing the initial review, launch a **critique pass** to improve review quality.
+
+The critique examines your own review output and looks for:
+
+- **Missed issues** - Problems in the code that the initial review didn't catch
+- **Incorrect severity** - Findings that should be upgraded or downgraded
+- **False positives** - Findings that aren't actually problems on closer inspection
+- **Incomplete reasoning** - Suggestions that lack proper justification
+
+To perform the critique:
+
+1. Re-read the original code with fresh eyes
+2. Compare against your initial findings
+3. Ask: "What did I miss? What did I get wrong?"
+4. Document any additional findings or corrections
+
+### Phase 3: Synthesis
+
+Combine the initial review with critique findings into a final output:
+
+1. **Merge findings** - Add any new issues identified during critique
+2. **Resolve conflicts** - When initial review and critique disagree:
+   - Prefer higher severity (err on the side of caution)
+   - Note disagreements with context when relevant
+3. **Remove false positives** - Drop findings the critique identified as incorrect
+4. **Annotate critique contributions** - Mark findings that came from the critique phase with `[Critique]`
+
+#### Deciding on Additional Passes
+
+After synthesis, decide whether another critique pass would add value:
+
+- **Run another pass if:** The critique found significant issues, suggesting more may be lurking
+- **Stop if:** The critique pass found nothing substantial or only minor adjustments
+
+Limit to a maximum of 2 critique passes to avoid diminishing returns.
 
 ## Output Format
 
@@ -179,6 +221,7 @@ Structure review findings clearly:
 
 ### Design
 - [Severity] file:line - Description
+- [Critique] [Severity] file:line - Description (added by critique pass)
 
 ### Functionality
 - [Severity] file:line - Description
@@ -211,6 +254,12 @@ Structure review findings clearly:
 
 [Brief explanation of verdict]
 ```
+
+### Annotation Format
+
+- **Initial findings**: Listed without prefix, e.g., `[Blocking] file:line - Description`
+- **Critique findings**: Prefixed with `[Critique]`, e.g., `[Critique] [Suggestion] file:line - Description`
+- **Severity adjustments**: Note when critique changed severity, e.g., `[Upgraded from Suggestion] [Blocking] file:line - Description`
 
 Omit empty categories. Group related findings together.
 
