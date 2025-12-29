@@ -188,44 +188,55 @@ The critique subagent examines the initial review and looks for:
 - **False positives** - Findings that aren't actually problems on closer inspection
 - **Incomplete reasoning** - Suggestions that lack proper justification
 
-Example Task tool invocation:
+Example Task tool invocation (showing the actual tool parameters):
 
 ```
-Task tool with subagent_type: "general-purpose"
-prompt: |
-  Critique this code review. You have access to the original code and the review output.
+Tool: Task
+Parameters:
+  subagent_type: "general-purpose"
+  description: "Critique code review"
+  prompt: |
+    Critique this code review. You have access to read the original code files.
 
-  Files to review: <list of files>
+    Files under review (use the Read tool to examine these):
+    - src/components/Button.tsx
+    - src/utils/validation.ts
 
-  Initial review output:
-  <paste your review here>
+    Initial review output:
+    ## Summary
+    [paste your complete review output here]
 
-  Your job is to find what the review missed or got wrong:
-  1. Read the original code files
-  2. Compare against the review findings
-  3. Identify: missed issues, incorrect severity, false positives, incomplete reasoning
-  4. Return your critique as a structured list of findings
+    ## Findings
+    [include all findings from your initial review]
+
+    Your job is to find what the review missed or got wrong:
+    1. Read each of the original code files listed above
+    2. Compare the code against the review findings
+    3. Identify: missed issues, incorrect severity, false positives, incomplete reasoning
+    4. Return your critique as a structured list of findings
 ```
+
+The subagent has full access to the Read tool, so provide file paths rather than inlining content. This keeps the prompt concise and allows the subagent to examine the code directly.
 
 ### Phase 3: Synthesis
 
 Combine the initial review with critique findings into a final output:
 
 1. **Merge findings** - Add any new issues identified during critique
-2. **Resolve conflicts** - When initial review and critique disagree:
+2. **Remove false positives** - If critique determines a finding isn't actually a problem, remove it entirely
+3. **Resolve severity conflicts** - When both agree an issue exists but disagree on severity:
    - Prefer higher severity (err on the side of caution)
    - Note disagreements with context when relevant
-3. **Remove false positives** - Drop findings the critique identified as incorrect
 4. **Annotate critique contributions** - Mark findings that came from the critique phase with `[Critique]`
 
 #### Deciding on Additional Passes
 
 After synthesis, decide whether another critique pass would add value:
 
-- **Run another pass if:** The critique found significant issues, suggesting more may be lurking
-- **Stop if:** The critique pass found nothing substantial or only minor adjustments
+- **Run another pass if:** The critique identified any new issues (missed problems, severity upgrades, or false positives)
+- **Stop if:** The critique only confirmed existing findings without adding new ones
 
-Limit to a maximum of 2 critique passes to avoid diminishing returns.
+Limit to a maximum of 2 critique passes. Beyond this, additional passes rarely surface new issues and the cost outweighs the benefit.
 
 ## Output Format
 
@@ -240,7 +251,8 @@ Structure review findings clearly:
 
 ### Design
 - [Severity] file:line - Description
-- [Critique] [Severity] file:line - Description (added by critique pass)
+- [Critique] [Severity] file:line - Description (new issue found by critique)
+- [Upgraded from Suggestion] [Blocking] file:line - Description (severity changed by critique)
 
 ### Functionality
 - [Severity] file:line - Description
