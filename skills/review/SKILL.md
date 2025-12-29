@@ -196,9 +196,12 @@ Parameters:
   subagent_type: "general-purpose"
   description: "Critique code review"
   prompt: |
-    Critique this code review. You have access to read the original code files.
+    Critique this code review. You have access to Bash and Read tools.
 
-    Files under review (use the Read tool to examine these):
+    To see exactly what changed, run:
+    git diff main...HEAD
+
+    Files under review (use Read to examine full context if needed):
     - src/components/Button.tsx
     - src/utils/validation.ts
 
@@ -210,13 +213,14 @@ Parameters:
     [include all findings from your initial review]
 
     Your job is to find what the review missed or got wrong:
-    1. Read each of the original code files listed above
-    2. Compare the code against the review findings
-    3. Identify: missed issues, incorrect severity, false positives, incomplete reasoning
-    4. Return your critique as a structured list of findings
+    1. Run git diff to see the actual changes
+    2. Read full files if you need more context
+    3. Compare the changes against the review findings
+    4. Identify: missed issues, incorrect severity, false positives, incomplete reasoning
+    5. Return your critique as a structured list of findings
 ```
 
-The subagent has full access to the Read tool, so provide file paths rather than inlining content. This keeps the prompt concise and allows the subagent to examine the code directly.
+The subagent has access to Bash (for `git diff`) and Read tools. Using `git diff main...HEAD` shows exactly what changed, which is more focused than reading entire files. Use Read for additional context when needed.
 
 ### Phase 3: Synthesis
 
