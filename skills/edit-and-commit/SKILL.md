@@ -1,6 +1,6 @@
 ---
 name: edit-and-commit
-description: Edit a single file and automatically commit the changes with roborev pre-commit review. Enforces atomic commits by restricting edits to one file at a time. Use when the user wants to make a focused change to a specific file and commit it.
+description: Edit files and automatically commit the changes with roborev pre-commit review. Enforces atomic commits by ensuring changes form a meaningful, coherent unit of work. Use when the user wants to make focused changes and commit them.
 user-invocable: true
 allowed-tools: Bash, Read, Edit, Write, Grep, Glob, AskUserQuestion
 ---
@@ -9,7 +9,7 @@ allowed-tools: Bash, Read, Edit, Write, Grep, Glob, AskUserQuestion
 
 ## Purpose
 
-Make focused, atomic commits by editing a single file and automatically committing it with an AI code review step. This skill enforces single-file editing to maintain clean git history and uses roborev for pre-commit code review.
+Make focused, atomic commits by editing files and automatically committing them with an AI code review step. This skill ensures changes form a meaningful, coherent commit and uses roborev for pre-commit code review.
 
 ## Prerequisites
 
@@ -19,38 +19,44 @@ Make focused, atomic commits by editing a single file and automatically committi
 
 ## Workflow
 
-### Step 1: Identify the File and Change
+### Step 1: Identify the Files and Changes
 
 User will specify:
-- Which file to edit
+- Which file(s) to edit
 - What changes to make
 
 If not clear, ask for clarification.
 
+**Check coherence:**
+- Do the changes form a meaningful, atomic commit?
+- Can they be described with a single, clear commit message?
+- Are they logically related (e.g., fixing a bug, adding a feature, refactoring)?
+
 **STOP if:**
-- User requests changes to multiple files → "This skill edits one file at a time. Please specify a single file."
+- Changes are unrelated or should be separate commits → Suggest breaking into multiple commits
 - File path is ambiguous → Ask which file they mean
 
-### Step 2: Read the File
+### Step 2: Read the Files
 
 Read the current file contents to understand context:
 
 ```bash
-# Use Read tool to read the file
+# Use Read tool to read each file
 ```
 
 **STOP if:**
 - File doesn't exist → Ask if they want to create a new file (requires Write tool, not Edit)
 
-### Step 3: Make the Edit
+### Step 3: Make the Edits
 
-Use the Edit tool to make the requested changes to the file.
+Use the Edit/Write tools to make the requested changes to the files.
 
 Follow these principles:
 - Make only the requested changes
 - Preserve existing formatting and style
 - Don't add unnecessary comments or documentation
 - Don't refactor surrounding code unless requested
+- Ensure all changes are logically related and form a coherent commit
 
 ### Step 4: Run roborev Pre-commit Review
 
@@ -86,7 +92,7 @@ If adjustments needed, return to Step 3 with the additional changes.
 Once user approves, commit the changes with a descriptive message:
 
 ```bash
-git add <file-path>
+git add <file-paths...>
 git commit -m "<descriptive commit message>"
 ```
 
@@ -106,33 +112,43 @@ git commit -m "<descriptive commit message>"
 ### Step 8: Confirm Success
 
 Report back to user:
-- What file was edited
+- What files were edited
 - What changes were made
 - Commit SHA
 - Any roborev feedback that was addressed
 
-## Single-File Enforcement
+## Atomic Commit Principle
 
-This skill is designed for atomic commits. If the user asks to edit multiple files:
+This skill is designed for atomic commits - changes that form a meaningful, coherent unit of work.
 
-1. **Refuse the request** - Explain this skill handles one file at a time
-2. **Suggest alternatives**:
-   - Run the skill multiple times for separate files
-   - Use standard editing workflow for multi-file changes
-   - Consider if changes should be a single ticket with `/implement-ticket`
+**Good examples of atomic commits:**
+- Fix a bug across multiple related files
+- Add a feature that requires changes to implementation, tests, and configuration
+- Refactor a function and update all its call sites
+- Rename a symbol across multiple files
+
+**Bad examples (should be separate commits):**
+- Fix bug in auth.py AND add new feature to api.py (unrelated changes)
+- Update dependencies AND refactor database code (separate concerns)
+- Multiple unrelated bug fixes
+
+If the user asks to make unrelated changes:
+1. **Suggest splitting** - Explain these should be separate commits
+2. **Offer to do them sequentially** - Run the skill multiple times for separate commits
 
 ## Guidelines
 
 **DO**:
-- Edit exactly one file per invocation
-- Read the file first to understand context
+- Edit files that logically belong together in one commit
+- Read files first to understand context
 - Run roborev review before committing
 - Show review results to user
 - Write clear, descriptive commit messages
 - Ask user to approve before committing
+- Ensure changes form a coherent, atomic commit
 
 **DON'T**:
-- Edit multiple files in one invocation
+- Mix unrelated changes in one commit
 - Skip the roborev review step
 - Commit without user approval after review
 - Add Claude attribution to commits
@@ -196,13 +212,30 @@ Skill response:
 9. Review passes
 10. Commit: "Increase API rate limit to 500"
 
+### Example 4: Multiple related files
+
+User: "Rename the getUserData function to fetchUserData everywhere"
+
+Skill response:
+1. Search for all occurrences of getUserData
+2. Read api.py, tests.py, and utils.py (all use the function)
+3. Update function definition in api.py
+4. Update function calls in tests.py
+5. Update imports in utils.py
+6. Run roborev review
+7. Review passes
+8. Show results to user
+9. User approves
+10. Commit: "Rename getUserData to fetchUserData"
+
 ## Checklist
 
-- [ ] Identify single file to edit and what changes to make
-- [ ] Read the file to understand context
+- [ ] Identify files to edit and what changes to make
+- [ ] Verify changes form a coherent, atomic commit
+- [ ] Read files to understand context
 - [ ] Make the requested edits
 - [ ] Run roborev pre-commit review with --dirty --wait
 - [ ] Display review results to user
 - [ ] Get user approval to proceed or make adjustments
-- [ ] Commit with descriptive message (no Claude attribution)
+- [ ] Commit all changed files with descriptive message (no Claude attribution)
 - [ ] Report success with commit SHA and summary
